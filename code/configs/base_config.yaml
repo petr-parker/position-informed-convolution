@@ -1,0 +1,27 @@
+
+# Model
+
+AGENT_SIZE:               16
+
+PIC_KERNEL_SIZE:          3
+PIC_IN_CHANNELS:          32
+PIC_HIDDEN_CHANNELS:      64  
+PIC_OUT_CHANNELS:         32
+PIC_NUMBER_APPLICATION:   5
+
+
+
+# Dataset
+DATASET_PATH:             './dataset'
+IMAGE_SHAPE:              [256, 256]
+
+
+
+# Optimization
+BATCH_SIZE:               32
+EPOCHS:                   10
+OPTIMZER_NAME:            'Adam'
+OPTIMZER_LR:              0.001
+SCHEDULER_NAME:           'cosine'
+
+
