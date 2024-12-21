@@ -40,7 +40,8 @@
 ## Links
 - LinkReview
 - [Overleaf](https://www.overleaf.com/7418856895cvhqhmpxvngm#63b794)
-- Paper
+- [Paper](https://github.com/petr-parker/position-informed-convolution/blob/main/assets/PIC.pdf)
+- [Slides](https://github.com/petr-parker/position-informed-convolution/blob/main/assets/PIC_slides.pdf)
 - Code
 
 
