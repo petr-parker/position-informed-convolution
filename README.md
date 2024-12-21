@@ -3,7 +3,7 @@
 </div>
 
 <div align="center">  
-    <img src="images/implicit.webp" width="500px" />
+    <img src="images/Pipeline.jpg" width="500px" />
 </div>
 
 <table>
