@@ -27,10 +27,19 @@
 
 ## Description
 
+Research project by student of MIPT at Intelligent systems department.
 
+## Abstract
 
-## Annotation
-
+This paper introduces a novel approach for robust curve detection in images, a task often hindered
+by the high degree of parametric freedom in curve representation. Our method utilizes a multi-agent system,
+wherein individual agents employ the Hough transform to identify potential curve segments. To effectively
+consolidate these partial detections and account for their respective spatial contexts, we propose the
+Positional Informed Convolution (PIC) layer. This novel layer extends traditional convolutional operations
+by explicitly encoding the spatial location of input feature maps, thus enabling a more sophisticated and
+contextually aware aggregation of agents’ outputs. The effectiveness of our proposed approach is validated
+through experiments on a custom-built synthetic dataset, where we demonstrate significant improvements
+in curve detection accuracy and robustness compared to conventional methods.
 
 
 ## TODO
