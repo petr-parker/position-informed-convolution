@@ -1,32 +1,23 @@
 import numpy as np
 import torch.utils.data as data
 import os
+import yaml
+from easydict import EasyDict as edict
+from scipy.signal import wiener
 
-class MyDataset(data.Dataset):
-    def __init__(self, cfg, subset='train'):
-        assert subset in ['tran, test'], 'train or test!'
-        self.cfg = cfg
-        self.subset = subset
-        self.idxes = self.get_idxes()
+def read_config(config_path):
+    """Считывает конфигурацию из YAML файла и преобразует ее в easydict.
 
-        self.data = 
+    Args:
+        config_path (str): Путь к YAML файлу.
 
-    def get_idxes(self):
-        labels_path = self.get_labels_path()
-        names = os.listdir(labels_path)
-        idxes = [name.split('.')[0] for name in names]
-        return idxes
+    Returns:
+        easydict: Объект easydict с параметрами конфигурации.
+    """
+    with open(config_path, 'r') as f:
+        config_dict = yaml.safe_load(f) # используйте safe_load для безопасности
+    return edict(config_dict)
 
-    def get_images_path(self):
-        path = self.cfg['DATASET_PATH'] + f'/{self.subset}/images'
-        return path
-
-    def get_labels_path(self):
-        path = self.cfg['DATASET_PATH'] + f'/{self.subset}/labels'
-        return path
-    
-    def __len__(self):
-        return len(self.idxes)
-
-    def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx]
+def wiener_filter(noisy_image, cfg):
+    filtered_image = wiener(noisy_image, cfg.WIENER_FRAME)
+    return filtered_image

@@ -12,10 +12,13 @@ PIC_NUMBER_APPLICATION:   5
 
 
 # Dataset
-DATASET_PATH:             './dataset'
+DATASET:                  'ImageNet_noise_reduction'
+IMAGENET_MEAN:            [90.504, 113.128, 122.296]
+IMAGENET_STD:             [73.176, 67.765, 71.750]
+NOISE_STD:                0.01
 IMAGE_SHAPE:              [256, 256]
 
-
+WIENER_FRAME:             [5, 5]
 
 # Optimization
 BATCH_SIZE:               32

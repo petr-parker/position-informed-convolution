@@ -57,6 +57,58 @@ class PIC(nn.Module):
         x = self.activation(x)
         return x
 
+class Sender(nn.Module):
+    '''
+    Отправитель адресных сообщений.
+    '''
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, **kwargs):
+        super(Sender, self).__init__()
+        kwargs['in_channels'] = in_channels
+        kwargs['out_channels'] = out_channels
+        kwargs['kernel_size'] = kernel_size
+        kwargs['stride'] = kernel_size
+        kwargs.pop('padding', None)
+        kwargs.pop('output_padding', None)
+        kwargs.pop('dilation', None)
+        self.conv = nn.ConvTranspose2d(**kwargs)
+
+    def forward(self, *args, **kwargs):
+        return self.conv(*args, **kwargs)
+
+
+class Receiver(nn.Module):
+    '''
+    Получатель адресных сообщений.
+    '''
+    @staticmethod
+    def pair(inp):
+        '''
+        Принудительно дублирует входную переменную если надо.
+        Аналог troch.nn.modules.utils._pair.
+        '''
+        if isinstance(inp, (list, tuple)):
+            return inp
+        return (inp, inp)
+
+    def __init__(self, in_channels, out_channels, kernel_size=3, **kwargs):
+        super(Receiver, self).__init__()
+
+        kernel_h, kernel_w = self.pair(kernel_size)
+        padding_h = (kernel_h ** 2 - kernel_h * 3) // 2 + 1
+        padding_w = (kernel_w ** 2 - kernel_w * 3) // 2 + 1
+        kwargs['in_channels'] = in_channels
+        kwargs['out_channels'] = out_channels
+        kwargs['kernel_size'] = kernel_size
+        kwargs['stride'] = kernel_size
+        kwargs['padding'] = (padding_h, padding_w)
+        kwargs['dilation'] = (kernel_h - 1, kernel_w - 1)
+        kwargs.pop('output_padding', None)
+        self.conv = nn.Conv2d(**kwargs)
+
+    def forward(self, *args, **kwargs):
+        return self.conv(*args, **kwargs)
+
 class SimpleModel(nn.Module):
     def __init__(self, cfg):
         self.conv2d = nn.Conv2d(1, cfg.PIC_IN_CHANNELS, 3, 1, 1)
