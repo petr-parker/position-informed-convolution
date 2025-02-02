@@ -60,13 +60,14 @@ class ImageNet_noise_reduction(Dataset):
         im = cv2.resize(im, self.cfg.IMAGE_SHAPE, interpolation=cv2.INTER_LINEAR)
         im = np.array(im, dtype=np.float32)
         im = self.normalise(im)
+        im = im.transpose(2, 0, 1)
 
-        noise = np.random.randn(*self.cfg.IMAGE_SHAPE, 3) * self.cfg.NOISE_STD
+        noise = np.random.randn(3, *self.cfg.IMAGE_SHAPE) * self.cfg.NOISE_STD
         noisy_im = im + noise
 
         data_dict = {
-            'noisy_im' : noisy_im,
-            'original_im' : im,
+            'im_noisy' : noisy_im,
+            'im_orig' : im,
         }
 
         return data_dict

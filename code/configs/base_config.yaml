@@ -1,7 +1,10 @@
 
+
+WANDB_NAME:               'test-1'
+DEVICE:                   'cuda'
+
 # Model
 
-INPUT_CHANNELS:           3
 INPUT_CHANNELS:           3
 
 PIC_KERNEL_SIZE:          3
@@ -19,7 +22,7 @@ IMAGENET_STD:             [73.176, 67.765, 71.750]
 
 
 NOISE_STD:                0.01
-IMAGE_SHAPE:              [256, 256]
+IMAGE_SHAPE:              [128, 128]
 
 WIENER_FRAME:             [5, 5]
 
@@ -30,10 +33,10 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 
 # Optimization
-BATCH_SIZE:               32
+BATCH_SIZE:               16
 EPOCHS:                   10
 OPTIMZER_NAME:            'Adam'
-OPTIMZER_LR:              0.001
+OPTIMIZER_LR:              0.001
 SCHEDULER_NAME:           'cosine'
 
 

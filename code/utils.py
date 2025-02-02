@@ -21,3 +21,5 @@ def read_config(config_path):
 def wiener_filter(noisy_image, frame):
     filtered_image = wiener(noisy_image, frame)
     return filtered_image
+
+

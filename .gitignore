@@ -3,6 +3,7 @@ code/dataset
 code/data
 *data
 .DS_Store
+*wandb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

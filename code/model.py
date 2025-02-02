@@ -152,14 +152,14 @@ class Model(nn.Module):
         self.cfg = cfg
 
         self.conv_inp = nn.Conv2d(cfg.INPUT_CHANNELS, cfg.PIC_IN_CHANNELS, 3, 1, 1)
-        self.block_list = [ SR_Block(cfg) for _ in range(cfg.PIC_NUMBER) ]
+        self.block_list = nn.ModuleList([ SR_Block(cfg) for _ in range(cfg.PIC_NUMBER) ])
         self.conv_out = nn.Conv2d(cfg.PIC_IN_CHANNELS, cfg.INPUT_CHANNELS, 3, 1, 1)
 
 
 
     def forward(self, batch_dict):
         x_steps = []
-        x = batch_dict['noisy_im']
+        x = batch_dict['im_noisy']
         x = self.conv_inp(x)
         for i in range(self.cfg.PIC_NUMBER):
             x = self.block_list[i](x)
