@@ -42,7 +42,6 @@ class ImageNet_noise_reduction(Dataset):
 
         return mean, std
 
-
     def __len__(self):
         return len(self.im_list)
 
@@ -71,5 +70,3 @@ class ImageNet_noise_reduction(Dataset):
         }
 
         return data_dict
-
-

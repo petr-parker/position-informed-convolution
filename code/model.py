@@ -57,6 +57,19 @@ class PIC(nn.Module):
         x = self.activation(x)
         return x
 
+class SimpleModel(nn.Module):
+    def __init__(self, cfg):
+        self.conv2d = nn.Conv2d(1, cfg.PIC_IN_CHANNELS, 3, 1, 1)
+        self.pic = PIC(cfg['PIC_IN_CHANNELS'], cfg['PIC_HIDDEN_CHANNELS'], cfg['PIC_OUT_CHANNELS'], cfg['KERNEL_SIZE'])
+
+        self.conv1d = nn.Conv1d(cfg['PIC_OUT_CHANNELS'], 1, 1)
+
+    def forward(self, x):
+        x = self.conv2d(x)
+        x = self.pic(x)
+        x = self.conv1d(x)
+        return x
+
 class Sender(nn.Module):
     '''
     Отправитель адресных сообщений.
@@ -109,17 +122,59 @@ class Receiver(nn.Module):
     def forward(self, *args, **kwargs):
         return self.conv(*args, **kwargs)
 
-class SimpleModel(nn.Module):
-    def __init__(self, cfg):
-        self.conv2d = nn.Conv2d(1, cfg.PIC_IN_CHANNELS, 3, 1, 1)
-        self.pic = PIC(cfg['PIC_IN_CHANNELS'], cfg['PIC_HIDDEN_CHANNELS'], cfg['PIC_OUT_CHANNELS'], cfg['KERNEL_SIZE'])
 
-        self.conv1d = nn.Conv1d(cfg['PIC_OUT_CHANNELS'], 1, 1)
+class SR_Block(nn.Module):
+    def __init__(self, cfg):
+        super(SR_Block, self).__init__()
+
+        self.cfg = cfg
+        inp_channels = cfg.PIC_IN_CHANNELS
+        msg_channels = cfg.PIC_HIDDEN_CHANNELS
+        kernel_size = cfg.PIC_KERNEL_SIZE
+        self.sender = Sender(inp_channels, msg_channels, kernel_size)
+        self.receiver = Receiver(msg_channels, inp_channels, kernel_size)
+
+        activations = {
+            'relu' : nn.ReLU(),
+        }
+        self.activation = activations[cfg.PIC_ACTIVATION]
 
     def forward(self, x):
-        x = self.conv2d(x)
-        x = self.pic(x)
-        x = self.conv1d(x)
+        x = self.sender(x)
+        x = self.activation(x)
+        x = self.receiver(x)
         return x
     
+    
+class Model(nn.Module):
+    def __init__(self, cfg):
+        super(Model, self).__init__()
+        self.cfg = cfg
 
+        self.conv_inp = nn.Conv2d(cfg.INPUT_CHANNELS, cfg.PIC_IN_CHANNELS, 3, 1, 1)
+        self.block_list = [ SR_Block(cfg) for _ in range(cfg.PIC_NUMBER) ]
+        self.conv_out = nn.Conv2d(cfg.PIC_IN_CHANNELS, cfg.INPUT_CHANNELS, 3, 1, 1)
+
+
+
+    def forward(self, batch_dict):
+        x_steps = []
+        x = batch_dict['noisy_im']
+        x = self.conv_inp(x)
+        for i in range(self.cfg.PIC_NUMBER):
+            x = self.block_list[i](x)
+            x_steps.append(x)
+        x = self.conv_out(x)
+
+        result = batch_dict.copy()
+        result.update({
+            'x_steps' : x_steps,
+            'im_pred' : x,
+        })
+
+        return result
+
+
+
+        
+    

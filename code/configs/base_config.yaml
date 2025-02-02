@@ -1,13 +1,14 @@
 
 # Model
 
-AGENT_SIZE:               16
+INPUT_CHANNELS:           3
+INPUT_CHANNELS:           3
 
 PIC_KERNEL_SIZE:          3
 PIC_IN_CHANNELS:          32
-PIC_HIDDEN_CHANNELS:      64  
-PIC_OUT_CHANNELS:         32
-PIC_NUMBER_APPLICATION:   5
+PIC_HIDDEN_CHANNELS:      64
+PIC_ACTIVATION:           'relu'
+PIC_NUMBER:               5
 
 
 
@@ -15,10 +16,18 @@ PIC_NUMBER_APPLICATION:   5
 DATASET:                  'ImageNet_noise_reduction'
 IMAGENET_MEAN:            [90.504, 113.128, 122.296]
 IMAGENET_STD:             [73.176, 67.765, 71.750]
+
+
 NOISE_STD:                0.01
 IMAGE_SHAPE:              [256, 256]
 
 WIENER_FRAME:             [5, 5]
+
+# Loss
+MSE_WEIGHT:               1.0
+APPLY_LOSS_EACH_BLOCK:    True
+
+
 
 # Optimization
 BATCH_SIZE:               32

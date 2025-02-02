@@ -18,6 +18,6 @@ def read_config(config_path):
         config_dict = yaml.safe_load(f) # используйте safe_load для безопасности
     return edict(config_dict)
 
-def wiener_filter(noisy_image, cfg):
-    filtered_image = wiener(noisy_image, cfg.WIENER_FRAME)
+def wiener_filter(noisy_image, frame):
+    filtered_image = wiener(noisy_image, frame)
     return filtered_image
