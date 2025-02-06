@@ -155,21 +155,18 @@ class Model(nn.Module):
         self.block_list = nn.ModuleList([ SR_Block(cfg) for _ in range(cfg.PIC_NUMBER) ])
         self.conv_out = nn.Conv2d(cfg.PIC_IN_CHANNELS, cfg.INPUT_CHANNELS, 3, 1, 1)
 
-
-
     def forward(self, batch_dict):
-        x_steps = []
+        outputs = []
         x = batch_dict['im_noisy']
         x = self.conv_inp(x)
         for i in range(self.cfg.PIC_NUMBER):
             x = self.block_list[i](x)
-            x_steps.append(x)
-        x = self.conv_out(x)
+            output = self.conv_out(x)
+            outputs.append(output)
 
         result = batch_dict.copy()
         result.update({
-            'x_steps' : x_steps,
-            'im_pred' : x,
+            'outputs' : outputs,
         })
 
         return result

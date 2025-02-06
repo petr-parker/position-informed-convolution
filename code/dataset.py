@@ -47,7 +47,7 @@ class ImageNet_noise_reduction(Dataset):
 
     def normalise(self, im):
         im -= np.array(self.cfg.IMAGENET_MEAN)
-        im /= np.array(self.cfg.IMAGENET_MEAN)
+        im /= np.array(self.cfg.IMAGENET_STD)
         return im
 
     def __getitem__(self, idx):

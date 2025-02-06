@@ -21,8 +21,8 @@ IMAGENET_MEAN:            [90.504, 113.128, 122.296]
 IMAGENET_STD:             [73.176, 67.765, 71.750]
 
 
-NOISE_STD:                0.01
-IMAGE_SHAPE:              [128, 128]
+NOISE_STD:                1.
+IMAGE_SHAPE:              [200, 200]
 
 WIENER_FRAME:             [5, 5]
 
@@ -33,7 +33,7 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 
 # Optimization
-BATCH_SIZE:               16
+BATCH_SIZE:               10
 EPOCHS:                   10
 OPTIMZER_NAME:            'Adam'
 OPTIMIZER_LR:              0.001

@@ -22,4 +22,10 @@ def wiener_filter(noisy_image, frame):
     filtered_image = wiener(noisy_image, frame)
     return filtered_image
 
-
+def reconstruct_im(im, cfg):
+    im_copy = im.detach().clone().cpu().numpy()
+    im_copy = im_copy.transpose(1, 2, 0)
+    im_copy *= np.array(cfg.IMAGENET_STD)
+    im_copy += np.array(cfg.IMAGENET_MEAN)
+    im_copy = np.clip(im_copy, 0, 255).astype(np.uint8)
+    return im_copy
