@@ -72,7 +72,7 @@ class SimpleModel(nn.Module):
 
 class Sender(nn.Module):
     '''
-    Отправитель адресных сообщений.
+    Sender of address messages.
     '''
 
     def __init__(self, in_channels, out_channels, kernel_size=3, **kwargs):
@@ -92,13 +92,13 @@ class Sender(nn.Module):
 
 class Receiver(nn.Module):
     '''
-    Получатель адресных сообщений.
+    Recipient of address messages.
     '''
     @staticmethod
     def pair(inp):
         '''
-        Принудительно дублирует входную переменную если надо.
-        Аналог troch.nn.modules.utils._pair.
+        Forcefully the input variable if necessary.
+        Analog to torch.nn.modules.utils._pair.
         '''
         if isinstance(inp, (list, tuple)):
             return inp
@@ -152,15 +152,15 @@ class Model(nn.Module):
         self.cfg = cfg
 
         self.conv_inp = nn.Conv2d(cfg.INPUT_CHANNELS, cfg.PIC_IN_CHANNELS, 3, 1, 1)
-        self.block_list = nn.ModuleList([ SR_Block(cfg) for _ in range(cfg.PIC_NUMBER) ])
+        self.sr_block = SR_Block(cfg)
         self.conv_out = nn.Conv2d(cfg.PIC_IN_CHANNELS, cfg.INPUT_CHANNELS, 3, 1, 1)
 
     def forward(self, batch_dict):
         outputs = []
         x = batch_dict['im_noisy']
         x = self.conv_inp(x)
-        for i in range(self.cfg.PIC_NUMBER):
-            x = self.block_list[i](x)
+        for _ in range(self.cfg.PIC_NUMBER):
+            x = self.sr_block(x)
             output = self.conv_out(x)
             outputs.append(output)
 

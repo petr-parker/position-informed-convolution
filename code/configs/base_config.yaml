@@ -34,7 +34,7 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 # Optimization
 BATCH_SIZE:               10
-EPOCHS:                   10
+EPOCHS:                   2
 OPTIMZER_NAME:            'Adam'
 OPTIMIZER_LR:              0.001
 SCHEDULER_NAME:           'cosine'

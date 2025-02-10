@@ -1,12 +1,11 @@
 from tqdm import tqdm
-from losses import calc_loss
 import wandb
 import torch.optim as optim
 import torch
-from metrics import calc_metrics
-from utils import reconstruct_im
+import losses as l
+import metrics as m
 
-def init_wandb(cfg):
+def init_wandb(cfg, loss_functions_list, metrics_list):
     wandb.login(key="2e908bb2e1ece8e3954dabad3b089323fb77956a")
 
     wandb.init(
@@ -18,8 +17,20 @@ def init_wandb(cfg):
         }
     )
 
+    wandb.define_metric(f"Train/Total Loss", step_metric="train step")
 
-def train_one_epoch(net, optimizer, dataloader, e):
+    for number in range(cfg.PIC_NUMBER):
+        for loss_function in loss_functions_list:
+            wandb.define_metric(f"Train/{loss_function.name} Block {number}", step_metric="train step")
+
+    for number in range(cfg.PIC_NUMBER):
+        for metric in metrics_list:
+            wandb.define_metric(f"Val/{metric.name} Block {number}", step_metric="val step")
+
+
+def train_one_epoch(net, optimizer, dataloader, loss_functions_list, metrics_list, e):
+    net.train()
+    print(f'Training epoch [{e + 1}/{net.cfg.EPOCHS}] ...')
     for i, batch_data in enumerate(tqdm(dataloader)):
         step = e * len(dataloader) + i
 
@@ -29,45 +40,54 @@ def train_one_epoch(net, optimizer, dataloader, e):
         optimizer.zero_grad()
         results = net(batch_data)
 
-        total_loss = torch.tensor(0.0, device=net.cfg.DEVICE)
-        if net.cfg.MSE_WEIGHT > 0:
-            for number, output in enumerate(results['outputs']):
-                loss = torch.nn.MSELoss()(output, results['im_orig'])
-                wandb.log(
-                    {
-                        f"Train MSE Loss; Step {number + 1}": loss.item(),
-                    },
-                    step=step,
-                )
-                total_loss += net.cfg.MSE_WEIGHT * loss
-        total_loss.backward()
-        optimizer.step()
+        loss_dict = l.get_loss_dict(loss_functions_list, results)
 
-    print(f'Loss = {total_loss.item()}')
-
-    im_orig_reconstructed = reconstruct_im(results['im_orig'], net.cfg)
-    for number, output in enumerate(results['outputs']):
-        output_reconstructed = reconstruct_im(output, net.cfg)
-        output_metrics = calc_metrics(output_reconstructed, im_orig_reconstructed)
-        for name, value in output_metrics.items():
+        for key, value in loss_dict.items():
             wandb.log(
                 {
-                    f"{name}; Step {number + 1}": value,
-                },
-                step=step,
+                    f'Train/{key}' : value.item(),
+                    'train step' : step
+                }
             )
+        
+
+        loss_dict['Total Loss'].backward()
+        optimizer.step()
+
+    print(f'Epoch [{e + 1}/{net.cfg.EPOCHS}] training finshed, loss = ', loss_dict['Total Loss'].item())
+
+def val_one_epoch(net, dataloader, loss_functions_list, metrics_list, e):
+    net.eval()
+    print(f'Validating epoch [{e + 1}/{net.cfg.EPOCHS}] ...')
+    for i, batch_data in enumerate(tqdm(dataloader)):
+        step = e * len(dataloader) + i
+        batch_data['im_noisy'] = batch_data['im_noisy'].to(torch.float32).to(net.cfg.DEVICE)
+        batch_data['im_orig'] = batch_data['im_orig'].to(torch.float32).to(net.cfg.DEVICE)
+
+        results = net(batch_data)
+
+        metrics_dict = m.get_metrics_dict(metrics_list, results)
+
+        for key, value in metrics_dict.items():
+            wandb.log(
+                {
+                    f'Val/{key}' : value.item(),
+                    'val step' : step
+                }
+            )
+    print(f'Epoch [{e + 1}/{net.cfg.EPOCHS}] validation finshed.')
 
 
-def train(net, dataloader):
-
-    net.train()
-    init_wandb(net.cfg)
+def train_val_loop(net, dataloader):
     optimizer = optim.Adam(net.parameters(), lr=net.cfg.OPTIMIZER_LR)
+    loss_functions_list = l.create_loss_functions_list(net.cfg)
+    metrics_list = m.create_metrcs_list(net.cfg)
+
+    init_wandb(net.cfg, loss_functions_list, metrics_list)
 
     for e in range(net.cfg.EPOCHS):
-        print(f'Training epoch [{e + 1}/{net.cfg.EPOCHS}] ...')
-        train_one_epoch(net, optimizer, dataloader, e)
-
-
-
+        train_one_epoch(net, optimizer, dataloader, loss_functions_list, metrics_list, e)
+        val_one_epoch(net, dataloader, loss_functions_list, metrics_list, e)
+    
+    wandb.finish()
 

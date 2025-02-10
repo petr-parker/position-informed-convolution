@@ -19,7 +19,7 @@ class ImageNet_noise_reduction(Dataset):
         
         data_path = f'../data/ImageNet/{subset}/Data'
         self.im_list = []
-        for item in os.listdir(data_path):
+        for item in os.listdir(data_path)[::2]:
             for subitem in os.listdir(os.path.join(data_path, item)):
                 subitem_path = os.path.join(data_path, item, subitem)
                 self.im_list.append(subitem_path)        
