@@ -134,6 +134,9 @@ class SR_Block(nn.Module):
         self.sender = Sender(inp_channels, msg_channels, kernel_size)
         self.receiver = Receiver(msg_channels, inp_channels, kernel_size)
 
+        if self.cfg.ADD_CONV1x1:
+            self.conv1x1 = nn.Conv2d(msg_channels, msg_channels, 1, 1)
+
         activations = {
             'relu' : nn.ReLU(),
         }
@@ -142,6 +145,9 @@ class SR_Block(nn.Module):
     def forward(self, x):
         x = self.sender(x)
         x = self.activation(x)
+        if self.cfg.ADD_CONV1x1:
+            x = self.conv1x1(x)
+            x = self.activation(x)
         x = self.receiver(x)
         return x
     
@@ -170,6 +176,9 @@ class Model(nn.Module):
         })
 
         return result
+    
+    def get_num_parameters(self):
+        return sum(p.numel() for p in self.parameters())
 
 
 
