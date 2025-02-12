@@ -1,6 +1,6 @@
 
 
-WANDB_NAME:               'test-1'
+WANDB_NAME:               'basic'
 DEVICE:                   'cuda'
 
 # Model
@@ -12,7 +12,7 @@ PIC_IN_CHANNELS:          32
 PIC_HIDDEN_CHANNELS:      64
 PIC_ACTIVATION:           'relu'
 PIC_NUMBER:               5
-ADD_CONV1x1:              True
+ADD_CONV1x1:              False
 
 
 
@@ -34,7 +34,7 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 
 # Optimization
-BATCH_SIZE:               6
+BATCH_SIZE:               4
 EPOCHS:                   2
 OPTIMZER_NAME:            'Adam'
 OPTIMIZER_LR:              0.001
