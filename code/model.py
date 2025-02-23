@@ -158,7 +158,8 @@ class Model(nn.Module):
         self.cfg = cfg
 
         self.conv_inp = nn.Conv2d(cfg.INPUT_CHANNELS, cfg.PIC_IN_CHANNELS, 3, 1, 1)
-        self.sr_block = SR_Block(cfg)
+        if self.cfg.PIC_NUMBER > 0:
+            self.sr_block = SR_Block(cfg)
         self.conv_out = nn.Conv2d(cfg.PIC_IN_CHANNELS, cfg.INPUT_CHANNELS, 3, 1, 1)
 
     def forward(self, batch_dict):
@@ -167,6 +168,10 @@ class Model(nn.Module):
         x = self.conv_inp(x)
         for _ in range(self.cfg.PIC_NUMBER):
             x = self.sr_block(x)
+            output = self.conv_out(x)
+            outputs.append(output)
+
+        if self.cfg.PIC_NUMBER == 0:
             output = self.conv_out(x)
             outputs.append(output)
 

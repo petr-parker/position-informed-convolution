@@ -1,6 +1,6 @@
 
 
-WANDB_NAME:               'basic'
+WANDB_NAME:               'no-PIC'
 DEVICE:                   'cuda'
 
 # Model
