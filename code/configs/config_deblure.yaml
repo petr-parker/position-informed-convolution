@@ -1,6 +1,6 @@
 
 
-WANDB_NAME:               'no-PIC'
+WANDB_NAME:               'deblure'
 DEVICE:                   'cuda'
 
 # Model
@@ -12,14 +12,14 @@ PIC_IN_CHANNELS:          32
 PIC_HIDDEN_CHANNELS:      64
 PIC_ACTIVATION:           'relu'
 PIC_NUMBER:               5
-ADD_CONV1x1:              False
+ADD_CONV1x1:              True
 
 
 
 # Dataset
-DATASET:                  'ImageNet_noise_reduction'
-IMAGENET_MEAN:            [90.504, 113.128, 122.296]
-IMAGENET_STD:             [73.176, 67.765, 71.750]
+DATASET:                  'GoPro_deblure'
+DATASET_MEAN:            [111.95842572, 113.79689066, 118.01127043]
+DATASET_STD:             [59.39720184, 56.73789445, 56.79359916]
 
 
 NOISE_STD:                1.
@@ -35,7 +35,7 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 # Optimization
 BATCH_SIZE:               4
-EPOCHS:                   2
+EPOCHS:                   5
 OPTIMZER_NAME:            'Adam'
 OPTIMIZER_LR:              0.001
 SCHEDULER_NAME:           'cosine'

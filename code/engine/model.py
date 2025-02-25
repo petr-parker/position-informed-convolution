@@ -133,6 +133,7 @@ class SR_Block(nn.Module):
         kernel_size = cfg.PIC_KERNEL_SIZE
         self.sender = Sender(inp_channels, msg_channels, kernel_size)
         self.receiver = Receiver(msg_channels, inp_channels, kernel_size)
+        self.global_pool = nn.AvgPool2d((cfg.IMAGE_SHAPE))
 
         if self.cfg.ADD_CONV1x1:
             self.conv1x1 = nn.Conv2d(msg_channels, msg_channels, 1, 1)
@@ -143,12 +144,15 @@ class SR_Block(nn.Module):
         self.activation = activations[cfg.PIC_ACTIVATION]
 
     def forward(self, x):
+        global_features = self.global_pool(x)
+        #print(global_features.shape)
         x = self.sender(x)
         x = self.activation(x)
         if self.cfg.ADD_CONV1x1:
             x = self.conv1x1(x)
             x = self.activation(x)
         x = self.receiver(x)
+        x = x + global_features
         return x
     
     

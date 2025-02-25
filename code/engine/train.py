@@ -2,8 +2,8 @@ from tqdm import tqdm
 import wandb
 import torch.optim as optim
 import torch
-import losses as l
-import metrics as m
+import engine.losses as l
+import engine.metrics as m
 
 def init_wandb(cfg, loss_functions_list, metrics_list):
     wandb.login(key="2e908bb2e1ece8e3954dabad3b089323fb77956a")
@@ -78,7 +78,7 @@ def val_one_epoch(net, dataloader, loss_functions_list, metrics_list, e):
     print(f'Epoch [{e + 1}/{net.cfg.EPOCHS}] validation finshed.')
 
 
-def train_val_loop(net, dataloader):
+def train_val_loop(net, train_dataloader, val_dataloader):
     optimizer = optim.Adam(net.parameters(), lr=net.cfg.OPTIMIZER_LR)
     loss_functions_list = l.create_loss_functions_list(net.cfg)
     metrics_list = m.create_metrcs_list(net.cfg)
@@ -86,8 +86,8 @@ def train_val_loop(net, dataloader):
     init_wandb(net.cfg, loss_functions_list, metrics_list)
 
     for e in range(net.cfg.EPOCHS):
-        train_one_epoch(net, optimizer, dataloader, loss_functions_list, metrics_list, e)
-        val_one_epoch(net, dataloader, loss_functions_list, metrics_list, e)
+        train_one_epoch(net, optimizer, train_dataloader, loss_functions_list, metrics_list, e)
+        val_one_epoch(net, val_dataloader, loss_functions_list, metrics_list, e)
     
     wandb.finish()
 
