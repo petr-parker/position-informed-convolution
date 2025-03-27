@@ -1,6 +1,20 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.nn import init  # , functional as F
+from torch.nn.parameter import Parameter
+from torch import Tensor
+import math
+
+
+def _pair(inp):
+    '''
+    Forcefully the input variable if necessary.
+    Analog to torch.nn.modules.utils._pair.
+    '''
+    if isinstance(inp, (list, tuple)):
+        return inp
+    return (inp, inp)
+
 
 class PIC(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, kernel_size):
@@ -12,7 +26,7 @@ class PIC(nn.Module):
 
         self.pad00 = torch.nn.ZeroPad2d((0, 2, 0, 2))
         self.conv00 = nn.Conv2d(in_channels, hidden_channels, 1, 1)
-        
+
         self.pad01 = torch.nn.ZeroPad2d((1, 1, 0, 2))
         self.conv01 = nn.Conv2d(in_channels, hidden_channels, 1, 1)
 
@@ -33,10 +47,10 @@ class PIC(nn.Module):
 
         self.pad21 = torch.nn.ZeroPad2d((1, 1, 2, 0))
         self.conv21 = nn.Conv2d(in_channels, hidden_channels, 1, 1)
-        
+
         self.pad22 = torch.nn.ZeroPad2d((2, 0, 2, 0))
         self.conv22 = nn.Conv2d(in_channels, hidden_channels, 1, 1)
-        
+
         self.activation = nn.Sigmoid()
 
         self.final = nn.Conv2d(hidden_channels * 9, out_channels, 1, 1)
@@ -57,6 +71,7 @@ class PIC(nn.Module):
         x = self.activation(x)
         return x
 
+
 class SimpleModel(nn.Module):
     def __init__(self, cfg):
         self.conv2d = nn.Conv2d(1, cfg.PIC_IN_CHANNELS, 3, 1, 1)
@@ -69,6 +84,7 @@ class SimpleModel(nn.Module):
         x = self.pic(x)
         x = self.conv1d(x)
         return x
+
 
 class Sender(nn.Module):
     '''
@@ -94,20 +110,11 @@ class Receiver(nn.Module):
     '''
     Recipient of address messages.
     '''
-    @staticmethod
-    def pair(inp):
-        '''
-        Forcefully the input variable if necessary.
-        Analog to torch.nn.modules.utils._pair.
-        '''
-        if isinstance(inp, (list, tuple)):
-            return inp
-        return (inp, inp)
 
     def __init__(self, in_channels, out_channels, kernel_size=3, **kwargs):
         super(Receiver, self).__init__()
 
-        kernel_h, kernel_w = self.pair(kernel_size)
+        kernel_h, kernel_w = _pair(kernel_size)
         padding_h = (kernel_h ** 2 - kernel_h * 3) // 2 + 1
         padding_w = (kernel_w ** 2 - kernel_w * 3) // 2 + 1
         kwargs['in_channels'] = in_channels
@@ -121,6 +128,102 @@ class Receiver(nn.Module):
 
     def forward(self, *args, **kwargs):
         return self.conv(*args, **kwargs)
+
+
+class Modifier(nn.Module):
+    '''
+    Модификатор адресных сообщений.
+    '''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 polynomial_degree=3,
+                 kernel_size=3,
+                 bias: bool = True,
+                 device=None,
+                 dtype=None,
+                 **kwargs):
+        factory_kwargs = {"device": device, "dtype": dtype}
+        super().__init__()
+
+        kernel_size = _pair(kernel_size)
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.polynomial_degree = polynomial_degree
+        self.kernel_size = kernel_size
+
+        self.polynomial_weights = nn.parameter.Parameter(
+            torch.empty((in_channels, out_channels), **factory_kwargs)
+        )
+
+        weight_shape = (
+            1,
+            kernel_size[0],
+            kernel_size[1],
+            in_channels * polynomial_degree,
+            out_channels
+        )
+        self.weight = Parameter(
+            torch.empty(weight_shape, **factory_kwargs)
+        )
+        if bias:
+            bias_shape = (
+                1,
+                out_channels,
+                kernel_size[0],
+                kernel_size[1]
+            )
+            self.bias = Parameter(
+                torch.empty(bias_shape, **factory_kwargs)
+            )
+        else:
+            self.register_parameter("bias", None)
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        # Setting a=sqrt(5) in kaiming_uniform is the same as initializing with
+        # uniform(-1/sqrt(in_features), 1/sqrt(in_features)). For details, see
+        # https://github.com/pytorch/pytorch/issues/57109
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, x: Tensor) -> Tensor:
+        tile_dims = [
+            x.shape[2] // self.kernel_size[0],
+            x.shape[3] // self.kernel_size[1],
+        ]
+        assert tile_dims[0] * self.kernel_size[0] == x.shape[2]
+        assert tile_dims[1] * self.kernel_size[1] == x.shape[3]
+
+        # x = concat([x, x ** 2, ..., x ** polynomial_degree]):
+        if self.polynomial_degree > 1:
+            exp_x = [x]
+            for _ in range(self.polynomial_degree - 1):
+                exp_x.append(exp_x[-1] * x)
+            x = torch.concat(exp_x, 1)
+        elif self.polynomial_degree != 1:
+            raise ValueError(
+                '`polynomial_degree` must be uint. ' +
+                f'Got {self.polynomial_degree}.'
+            )
+
+        # x = x @ weight:
+        x = x.permute(0, 2, 3, 1)[..., None, :]
+        weight = torch.tile(self.weight, [1] + list(tile_dims) + [1, 1])
+        x = x @ weight
+        assert x.shape[-2] == 1
+        x = x[..., 0, :].permute(0, 3, 1, 2)
+
+        # x = x + bias:
+        if self.bias is not None:
+            bias = torch.tile(self.bias, [1, 1] + list(tile_dims))
+            x = x + bias
+
+        return x
 
 
 class SR_Block(nn.Module):
@@ -144,7 +247,7 @@ class SR_Block(nn.Module):
             self.conv1x1 = nn.Conv2d(msg_channels, msg_channels, 1, 1)
 
         activations = {
-            'relu' : nn.ReLU(),
+            'relu': nn.ReLU(),
         }
         self.activation = activations[cfg.PIC_ACTIVATION]
 
@@ -163,8 +266,8 @@ class SR_Block(nn.Module):
         if self.cfg.GLOBAL_POOL_PLACE == 'parallel':
             x = x + global_features
         return x
-    
-    
+
+
 class Model(nn.Module):
     def __init__(self, cfg):
         super(Model, self).__init__()
@@ -190,15 +293,10 @@ class Model(nn.Module):
 
         result = batch_dict.copy()
         result.update({
-            'outputs' : outputs,
+            'outputs': outputs,
         })
 
         return result
-    
+
     def get_num_parameters(self):
         return sum(p.numel() for p in self.parameters())
-
-
-
-        
-    
