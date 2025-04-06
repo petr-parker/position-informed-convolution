@@ -8,13 +8,16 @@ DEVICE:                   'cuda'
 INPUT_CHANNELS:           3
 
 PIC_KERNEL_SIZE:          3
-PIC_IN_CHANNELS:          32
-PIC_HIDDEN_CHANNELS:      64
+PIC_IN_CHANNELS:          16
+PIC_HIDDEN_CHANNELS:      32
 PIC_ACTIVATION:           'relu'
 PIC_NUMBER:               5
-ADD_CONV1x1:              True
-GLOBAL_POOL:              'avgpool'  # [avgpool, maxpool, none]
-GLOBAL_POOL_PLACE:        'parallel' # [parallel, serial]
+
+ADD_CONV1x1:              False
+MODIFIER:                 True
+GLOBAL_POOL:              'none'  # [avgpool, maxpool, none]
+GLOBAL_POOL_PLACE:        'none' # [parallel, serial, none]
+
 
 
 # Dataset
@@ -24,7 +27,7 @@ DATASET_STD:             [59.39720184, 56.73789445, 56.79359916]
 
 
 NOISE_STD:                1.
-IMAGE_SHAPE:              [200, 200]
+IMAGE_SHAPE:              [128, 128]
 
 WIENER_FRAME:             [5, 5]
 
@@ -35,8 +38,8 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 
 # Optimization
-BATCH_SIZE:               4
-EPOCHS:                   5
+BATCH_SIZE:               1
+EPOCHS:                   3
 OPTIMZER_NAME:            'Adam'
 OPTIMIZER_LR:              0.001
 SCHEDULER_NAME:           'cosine'

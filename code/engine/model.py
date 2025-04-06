@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn import init  # , functional as F
+from torch.nn import init, functional as F
 from torch.nn.parameter import Parameter
 from torch import Tensor
 import math
@@ -75,7 +75,7 @@ class PIC(nn.Module):
 class SimpleModel(nn.Module):
     def __init__(self, cfg):
         self.conv2d = nn.Conv2d(1, cfg.PIC_IN_CHANNELS, 3, 1, 1)
-        self.pic = PIC(cfg['PIC_IN_CHANNELS'], cfg['PIC_HIDDEN_CHANNELS'], cfg['PIC_OUT_CHANNELS'], cfg['KERNEL_SIZE'])
+        self.pic = PIC(cfg.PIC_IN_CHANNELS, cfg.PIC_HIDDEN_CHANNELS, cfg.PIC_OUT_CHANNELS, cfg.KERNEL_SIZE)
 
         self.conv1d = nn.Conv1d(cfg['PIC_OUT_CHANNELS'], 1, 1)
 
@@ -234,22 +234,36 @@ class SR_Block(nn.Module):
         inp_channels = cfg.PIC_IN_CHANNELS
         msg_channels = cfg.PIC_HIDDEN_CHANNELS
         kernel_size = cfg.PIC_KERNEL_SIZE
+
+        # Send
         self.sender = Sender(inp_channels, msg_channels, kernel_size)
-        self.receiver = Receiver(msg_channels, inp_channels, kernel_size)
 
-        if self.cfg.GLOBAL_POOL == 'avgpool':
-            self.global_pool = nn.AvgPool2d((cfg.IMAGE_SHAPE))
-        
-        if self.cfg.GLOBAL_POOL == 'maxpool':
-            self.global_pool = nn.MaxPool2d((cfg.IMAGE_SHAPE))
-
+        # Conv1x1
         if self.cfg.ADD_CONV1x1:
             self.conv1x1 = nn.Conv2d(msg_channels, msg_channels, 1, 1)
 
+        # Modify
+        if self.cfg.MODIFIER:
+            self.modifier = Modifier(msg_channels, msg_channels, 3, kernel_size)
+
+        # Global pooling
+        global_pools = {
+            'avgpool' : nn.AvgPool2d((cfg.IMAGE_SHAPE)),
+            'maxpool' : nn.MaxPool2d((cfg.IMAGE_SHAPE)),
+        }
+
+        if self.cfg.GLOBAL_POOL != 'none':
+            self.global_pool = global_pools[self.cfg.GLOBAL_POOL]
+
+        # Activate
         activations = {
             'relu': nn.ReLU(),
+            'sigmoid': nn.Sigmoid(),
         }
         self.activation = activations[cfg.PIC_ACTIVATION]
+
+        # Recieve
+        self.receiver = Receiver(msg_channels, inp_channels, kernel_size)
 
     def forward(self, x):
         if self.cfg.GLOBAL_POOL_PLACE == 'parallel':
@@ -257,14 +271,21 @@ class SR_Block(nn.Module):
         
         x = self.sender(x)
         x = self.activation(x)
+
         if self.cfg.ADD_CONV1x1:
             x = self.conv1x1(x)
             x = self.activation(x)
-        x = self.receiver(x)
+
+        if self.cfg.MODIFIER:
+            x = self.modifier(x)
+
         if self.cfg.GLOBAL_POOL_PLACE == 'serial':
             x = x + self.global_pool(x)
         if self.cfg.GLOBAL_POOL_PLACE == 'parallel':
             x = x + global_features
+
+        x = self.receiver(x)
+        
         return x
 
 

@@ -64,7 +64,8 @@ def val_one_epoch(net, dataloader, loss_functions_list, metrics_list, e):
         batch_data['im_noisy'] = batch_data['im_noisy'].to(torch.float32).to(net.cfg.DEVICE)
         batch_data['im_orig'] = batch_data['im_orig'].to(torch.float32).to(net.cfg.DEVICE)
 
-        results = net(batch_data)
+        with torch.no_grad():
+            results = net(batch_data)
 
         metrics_dict = m.get_metrics_dict(metrics_list, results)
 
