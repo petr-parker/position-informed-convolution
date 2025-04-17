@@ -153,9 +153,12 @@ class Modifier(nn.Module):
         self.polynomial_degree = polynomial_degree
         self.kernel_size = kernel_size
 
-        self.polynomial_weights = nn.parameter.Parameter(
-            torch.empty((in_channels, out_channels), **factory_kwargs)
-        )
+        # self.polynomial_weights = nn.parameter.Parameter(
+        #     torch.empty((in_channels, out_channels), **factory_kwargs)
+        # )
+
+        if self.polynomial_degree == 1:
+            self.activation = nn.ReLU()
 
         weight_shape = (
             1,
@@ -223,6 +226,9 @@ class Modifier(nn.Module):
             bias = torch.tile(self.bias, [1, 1] + list(tile_dims))
             x = x + bias
 
+        if self.polynomial_degree == 1:
+            x = self.activation(x)
+
         return x
 
 
@@ -244,7 +250,7 @@ class SR_Block(nn.Module):
 
         # Modify
         if self.cfg.MODIFIER:
-            self.modifier = Modifier(msg_channels, msg_channels, 3, kernel_size)
+            self.modifier = Modifier(msg_channels, msg_channels, 1, kernel_size)
 
         # Global pooling
         global_pools = {
