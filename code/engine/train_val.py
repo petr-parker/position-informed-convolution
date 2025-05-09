@@ -5,7 +5,7 @@ import torch
 import engine.losses as l
 import engine.metrics as m
 
-def init_wandb(cfg, loss_functions_list, metrics_list):
+def init_wandb(cfg, loss_functions_list, metrics_list, net):
     wandb.login(key="2e908bb2e1ece8e3954dabad3b089323fb77956a")
 
     wandb.init(
@@ -16,6 +16,11 @@ def init_wandb(cfg, loss_functions_list, metrics_list):
             'blocks_num' : cfg.PIC_NUMBER,
         }
     )
+
+    if cfg.LOG_PARAMETERS:
+        wandb.watch(net, log="all", log_freq=1)
+        for name, _ in net.named_parameters():
+            wandb.define_metric(f"grads/{name} grad_norm", step_metric="train step")
 
     wandb.define_metric(f"Train/Total Loss", step_metric="train step")
 
@@ -49,9 +54,20 @@ def train_one_epoch(net, optimizer, dataloader, loss_functions_list, metrics_lis
                     'train step' : step
                 }
             )
-        
 
         loss_dict['Total Loss'].backward()
+
+        if net.cfg.LOG_PARAMETERS:
+            for name, param in net.named_parameters():
+                if param.grad is not None:
+                    norm = param.grad.detach().norm(2).item()
+                    wandb.log(
+                        {
+                            f'grads/{name} grad_norm' : norm,
+                            'train step' : step
+                        }
+                    )
+
         optimizer.step()
 
     print(f'Epoch [{e + 1}/{net.cfg.EPOCHS}] training finshed, loss = ', loss_dict['Total Loss'].item())
@@ -84,7 +100,7 @@ def train_val_loop(net, train_dataloader, val_dataloader):
     loss_functions_list = l.create_loss_functions_list(net.cfg)
     metrics_list = m.create_metrcs_list(net.cfg)
 
-    init_wandb(net.cfg, loss_functions_list, metrics_list)
+    init_wandb(net.cfg, loss_functions_list, metrics_list, net)
 
     for e in range(net.cfg.EPOCHS):
         train_one_epoch(net, optimizer, train_dataloader, loss_functions_list, metrics_list, e)
