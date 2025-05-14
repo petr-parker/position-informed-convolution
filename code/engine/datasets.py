@@ -73,9 +73,9 @@ class GoPro_deblure(Dataset):
     Class for debluring on GoPro dataset.
     """
     def __init__(self, cfg, subset='train'):
-        data_path = f'../data/GOPRO_Large/{subset}'
+        data_path = f'/mnt/GOPRO_Large/{subset}'
         self.im_sharp_list = []
-        for item in os.listdir(data_path)[::5]:
+        for item in os.listdir(data_path):
             for subitem in os.listdir(os.path.join(data_path, item, 'sharp')):
                 subitem_path = os.path.join(data_path, item, 'sharp', subitem)
                 self.im_sharp_list.append(subitem_path)

@@ -1,6 +1,6 @@
 
 
-WANDB_NAME:               'deblure + grad norm logging / log freq = 1'
+WANDB_NAME:               'sigmoid 10 pic'
 DEVICE:                   'cpu'
 
 # Model
@@ -10,8 +10,8 @@ INPUT_CHANNELS:           3
 PIC_KERNEL_SIZE:          3
 PIC_IN_CHANNELS:          16
 PIC_HIDDEN_CHANNELS:      32
-PIC_ACTIVATION:           'relu'
-PIC_NUMBER:               5
+PIC_ACTIVATION:           'sigmoid'
+PIC_NUMBER:               10
 
 ADD_CONV1x1:              True
 MODIFIER:                 False
@@ -39,10 +39,10 @@ APPLY_LOSS_EACH_BLOCK:    True
 
 # Optimization
 BATCH_SIZE:               16
-EPOCHS:                   2
-OPTIMZER_NAME:            'Adam'
-OPTIMIZER_LR:              0.001
-SCHEDULER_NAME:           'cosine'
+EPOCHS:                   20
+OPTIMZER_NAME:            'SGD'
+OPTIMIZER_LR:              0.002
+SCHEDULER_NAME:           'none'
 LOG_PARAMETERS:            True
 
 
